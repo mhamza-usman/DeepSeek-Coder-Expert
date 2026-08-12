@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Intelligensi Agent</title>
+    <style>
+      html, body, #app { height: 100%; margin: 0; }
+      body { font-family: system-ui, sans-serif; background: #0b1020; color: #e8eefc; }
+      header { padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; background: #111833; }
+      main { display: grid; grid-template-columns: 1.2fr 0.8fr; height: calc(100% - 56px); }
+      #editor { height: 100%; }
+      #panel { padding: 16px; border-left: 1px solid #26304d; overflow: auto; }
+      textarea { width: 100%; min-height: 160px; background: #0f1730; color: #d7e3ff; border: 1px solid #2b3a63; }
+      button { background: #4c7dff; color: white; border: 0; padding: 10px 14px; border-radius: 8px; cursor: pointer; }
+      pre { white-space: pre-wrap; background: #0f1730; border: 1px solid #2b3a63; padding: 12px; border-radius: 10px; }
+      @media (max-width: 900px) { main { grid-template-columns: 1fr; grid-template-rows: 1fr auto; } #panel { border-left: 0; border-top: 1px solid #26304d; } }
+    </style>
+    <script src="https://unpkg.com/monaco-editor@0.52.0/min/vs/loader.js"></script>
+  </head>
+  <body>
+    <header>
+      <strong>Intelligensi Agent</strong>
+      <span>Local Ollama + ReAct</span>
+    </header>
+    <main>
+      <div id="editor"></div>
+      <aside id="panel">
+        <textarea id="prompt" placeholder="Ask the agent to inspect or modify files..."></textarea>
+        <div style="margin: 12px 0;">
+          <button id="send">Send</button>
+        </div>
+        <pre id="output"></pre>
+      </aside>
+    </main>
+    <script src="./app.js"></script>
+  </body>
+</html>
