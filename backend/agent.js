@@ -37,6 +37,50 @@ Respond with either:
 Keep JSON strictly valid when using tools.
 `;
 
+function extractJson(rawText) {
+  const start = rawText.indexOf("{");
+  const end = rawText.lastIndexOf("}");
+
+  if (start === -1 || end === -1 || end <= start) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(rawText.slice(start, end + 1));
+  } catch {
+    return null;
+  }
+}
+
+function extractCodeBlock(rawText) {
+  const match = rawText.match(/```(?:[a-zA-Z0-9_-]+)?\s*([\s\S]*?)\s*```/);
+  return match?.[1]?.trim() || null;
+}
+
+async function executeToolCall(toolCall, onToken, messages) {
+  if (!toolCall?.tool || !tools[toolCall.tool]) {
+    return false;
+  }
+
+  const args = toolCall.args || {};
+  const isFallback = toolCall.fallback === true;
+  const result = await tools[toolCall.tool](args);
+
+  await onToken(
+    JSON.stringify({
+      type: "tool",
+      tool: toolCall.tool,
+      args,
+      result,
+      fallback: isFallback,
+    }),
+  );
+
+  messages.push({ role: "assistant", content: JSON.stringify(toolCall) });
+  messages.push({ role: "tool", content: JSON.stringify(result) });
+  return true;
+}
+
 async function runReAct(message, onToken) {
   const messages = [
     { role: "system", content: systemPrompt.trim() },
@@ -51,34 +95,44 @@ async function runReAct(message, onToken) {
       stream: false,
     });
 
-    const text = response.choices[0]?.message?.content?.trim() || "";
-    let toolCall = null;
-    try {
-      toolCall = JSON.parse(text);
-    } catch {
-      for (const chunk of text.split(/\s+/)) {
+    const rawText = response.choices[0]?.message?.content?.trim() || "";
+    let toolCall = extractJson(rawText);
+
+    if (!toolCall || !toolCall.args || Object.keys(toolCall.args).length === 0) {
+      const codeBlock = extractCodeBlock(rawText);
+      if (codeBlock) {
+        toolCall = {
+          tool: "write_file",
+          args: {
+            targetPath: "auto-generated.js",
+            content: codeBlock,
+          },
+        };
+      }
+    }
+
+    if (!toolCall) {
+      for (const chunk of rawText.split(/\s+/)) {
         if (chunk) await onToken(chunk + " ");
       }
       return;
     }
 
-    if (!toolCall?.tool || !tools[toolCall.tool]) {
-      await onToken(`Invalid tool call: ${text}`);
+    const executed = await executeToolCall(toolCall, onToken, messages);
+    if (!executed) {
+      await onToken(`Invalid tool call: ${rawText}`);
       return;
     }
 
-    const result = await tools[toolCall.tool](toolCall.args || {});
-    await onToken(JSON.stringify({
-      type: "tool",
-      tool: toolCall.tool,
-      args: toolCall.args || {},
-      result,
-    }));
-    messages.push({ role: "assistant", content: text });
-    messages.push({ role: "tool", content: JSON.stringify(result) });
-
     if (step === 5) {
-      await onToken(JSON.stringify(result));
+      await onToken(
+        JSON.stringify({
+          type: "tool",
+          tool: toolCall.tool,
+          args: toolCall.args || {},
+          fallback: true,
+        }),
+      );
       return;
     }
   }

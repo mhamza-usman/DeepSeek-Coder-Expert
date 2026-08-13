@@ -33,6 +33,15 @@ function replaceEditorContent(text) {
   }
 }
 
+function extractStructuredContent(payload) {
+  return (
+    payload?.result?.content ??
+    payload?.args?.content ??
+    payload?.result?.message ??
+    ""
+  );
+}
+
 function buildWrappedMessage(userMessage) {
   return [
     `User Request: ${userMessage}`,
@@ -86,17 +95,19 @@ function connectAndSend(userMessage) {
     }
 
     if (payload.type === "tool") {
-      appendOutput(`\n[tool:${payload.tool}] ${JSON.stringify(payload.result)}\n`);
+      const fallbackLabel = payload.fallback ? " [fallback]" : "";
+      appendOutput(
+        `\n[tool:${payload.tool}${fallbackLabel}] ${JSON.stringify(payload.result)}\n`,
+      );
 
       if (payload.tool === "write_file") {
-        const content =
-          payload.result?.content ??
-          payload.args?.content ??
-          payload.result?.message ??
-          "";
+        const content = extractStructuredContent(payload);
 
         if (content) {
           replaceEditorContent(content);
+          if (payload.fallback) {
+            setStatus("Recovered fallback write", "live");
+          }
         }
       }
 
