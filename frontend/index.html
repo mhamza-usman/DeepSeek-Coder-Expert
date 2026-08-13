@@ -5,16 +5,107 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Intelligensi Agent</title>
     <style>
+      :root {
+        color-scheme: dark;
+        --bg: #070b16;
+        --panel: #0d1325;
+        --panel-2: #111a33;
+        --line: #253154;
+        --text: #eaf0ff;
+        --muted: #8fa3cc;
+        --accent: #5d8bff;
+        --accent-2: #7cc4ff;
+      }
+
       html, body, #app { height: 100%; margin: 0; }
-      body { font-family: system-ui, sans-serif; background: #0b1020; color: #e8eefc; }
-      header { padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; background: #111833; }
-      main { display: grid; grid-template-columns: 1.2fr 0.8fr; height: calc(100% - 56px); }
+      body {
+        font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+        background:
+          radial-gradient(circle at top left, rgba(93, 139, 255, 0.14), transparent 30%),
+          radial-gradient(circle at top right, rgba(124, 196, 255, 0.12), transparent 24%),
+          var(--bg);
+        color: var(--text);
+      }
+
+      header {
+        padding: 12px 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(13, 19, 37, 0.9);
+        border-bottom: 1px solid var(--line);
+        backdrop-filter: blur(10px);
+      }
+
+      main {
+        display: grid;
+        grid-template-columns: minmax(320px, 0.9fr) minmax(0, 1.1fr);
+        height: calc(100% - 56px);
+      }
+
       #editor { height: 100%; }
-      #panel { padding: 16px; border-left: 1px solid #26304d; overflow: auto; }
-      textarea { width: 100%; min-height: 160px; background: #0f1730; color: #d7e3ff; border: 1px solid #2b3a63; }
-      button { background: #4c7dff; color: white; border: 0; padding: 10px 14px; border-radius: 8px; cursor: pointer; }
-      pre { white-space: pre-wrap; background: #0f1730; border: 1px solid #2b3a63; padding: 12px; border-radius: 10px; }
-      @media (max-width: 900px) { main { grid-template-columns: 1fr; grid-template-rows: 1fr auto; } #panel { border-left: 0; border-top: 1px solid #26304d; } }
+
+      #panel {
+        padding: 16px;
+        border-left: 1px solid var(--line);
+        overflow: auto;
+        background: rgba(7, 11, 22, 0.68);
+      }
+
+      .stack {
+        display: grid;
+        gap: 12px;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 140px;
+        resize: vertical;
+        box-sizing: border-box;
+        background: var(--panel);
+        color: var(--text);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 12px;
+        font: inherit;
+      }
+
+      .toolbar {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      button {
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        color: #06101f;
+        border: 0;
+        padding: 10px 14px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: 700;
+      }
+
+      .status {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      pre {
+        white-space: pre-wrap;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        padding: 12px;
+        border-radius: 12px;
+        min-height: 180px;
+        margin: 0;
+      }
+
+      @media (max-width: 900px) {
+        main { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+        #panel { border-left: 0; border-top: 1px solid var(--line); }
+      }
     </style>
     <script src="https://unpkg.com/monaco-editor@0.52.0/min/vs/loader.js"></script>
   </head>
@@ -26,11 +117,14 @@
     <main>
       <div id="editor"></div>
       <aside id="panel">
-        <textarea id="prompt" placeholder="Ask the agent to inspect or modify files..."></textarea>
-        <div style="margin: 12px 0;">
-          <button id="send">Send</button>
+        <div class="stack">
+          <div class="toolbar">
+            <button id="send">Send</button>
+            <span id="status" class="status">Disconnected</span>
+          </div>
+          <textarea id="prompt" placeholder="Ask the agent to inspect or modify files..."></textarea>
+          <pre id="output"></pre>
         </div>
-        <pre id="output"></pre>
       </aside>
     </main>
     <script src="./app.js"></script>

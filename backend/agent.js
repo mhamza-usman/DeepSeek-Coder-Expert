@@ -68,6 +68,12 @@ async function runReAct(message, onToken) {
     }
 
     const result = await tools[toolCall.tool](toolCall.args || {});
+    await onToken(JSON.stringify({
+      type: "tool",
+      tool: toolCall.tool,
+      args: toolCall.args || {},
+      result,
+    }));
     messages.push({ role: "assistant", content: text });
     messages.push({ role: "tool", content: JSON.stringify(result) });
 
