@@ -57,6 +57,23 @@ function extractCodeBlock(rawText) {
   return match?.[1]?.trim() || null;
 }
 
+function inferTargetPath(message) {
+  const patterns = [
+    /(?:named|called)\s+([A-Za-z0-9._-]+\.[A-Za-z0-9._-]+)/i,
+    /(?:file|script)\s+([A-Za-z0-9._-]+\.[A-Za-z0-9._-]+)/i,
+    /([A-Za-z0-9._-]+\.[A-Za-z0-9._-]+)/,
+  ];
+
+  for (const pattern of patterns) {
+    const match = message.match(pattern);
+    if (match?.[1]) {
+      return match[1];
+    }
+  }
+
+  return "auto-generated.js";
+}
+
 async function executeToolCall(toolCall, onToken, messages) {
   if (!toolCall?.tool || !tools[toolCall.tool]) {
     return false;
@@ -86,6 +103,7 @@ async function runReAct(message, onToken) {
     { role: "system", content: systemPrompt.trim() },
     { role: "user", content: message },
   ];
+  const inferredTargetPath = inferTargetPath(message);
 
   for (let step = 0; step < 6; step += 1) {
     const response = await client.chat.completions.create({
@@ -104,9 +122,10 @@ async function runReAct(message, onToken) {
         toolCall = {
           tool: "write_file",
           args: {
-            targetPath: "auto-generated.js",
+            targetPath: inferredTargetPath,
             content: codeBlock,
           },
+          fallback: true,
         };
       }
     }
